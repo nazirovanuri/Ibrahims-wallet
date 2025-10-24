@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Денежки Ибрагима ⚽</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #4CAF50 0%, #2E7D32 100%);
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 15px;
+      width: 30%;
+    }
+    .buttons button {
+      background: #fff;
+      color: #2E7D32;
+      font-weight: bold;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .buttons button:hover {
+      background: #C8E6C9;
+    }
+    input, select {
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      margin: 5px;
+    }
+    .history, .goals {
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    .goal {
+      margin: 10px 0;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    progress {
+      width: 100%;
+      height: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>⚽ Денежки Ибрагима ⚽</header>
+  <div class="container">
+    <div>
+      <label for="currency">Валюта:</label>
+      <select id="currency">
+        <option value="AED" selected>Дирхам</option>
+        <option value="RUB">Рубли</option>
+        <option value="USD">Доллары</option>
+        <option value="EUR">Евро</option>
+      </select>
+    </div>
+
+    <div class="stats">
+      <div class="card">
+        <h3>Мои деньги</h3>
+        <p id="balance">0 AED</p>
+      </div>
+      <div class="card">
+        <h3>Копилка</h3>
+        <p id="savings">0 AED</p>
+      </div>
+      <div class="card">
+        <h3>Потратил</h3>
+        <p id="expenses">0 AED</p>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <input type="number" id="amount" placeholder="Сумма" />
+      <input type="text" id="description" placeholder="Описание" />
+      <br>
+      <button onclick="addIncome()">Пришли деньги</button>
+      <button onclick="addExpense()">Потратил</button>
+      <button onclick="addToSavings()">В копилку</button>
+    </div>
+
+    <div class="history">
+      <h3>История</h3>
+      <ul id="historyList"></ul>
+    </div>
+
+    <div class="goals">
+      <h3>Цели ⚽</h3>
+      <input type="text" id="goalName" placeholder="Новая цель (например, мяч)" />
+      <input type="number" id="goalAmount" placeholder="Сумма цели" />
+      <button onclick="addGoal()">Добавить цель</button>
+      <div id="goalList"></div>
+    </div>
+  </div>
+
+  <script>
+    let data = JSON.parse(localStorage.getItem('ibrahimData')) || {
+      balance: 0,
+      savings: 0,
+      expenses: 0,
+      history: [],
+      goals: [],
+      currency: 'AED'
+    };
+
+    const balanceEl = document.getElementById('balance');
+    const savingsEl = document.getElementById('savings');
+    const expensesEl = document.getElementById('expenses');
+    const historyList = document.getElementById('historyList');
+    const goalList = document.getElementById('goalList');
+    const currencySelect = document.getElementById('currency');
+
+    function updateDisplay() {
+      balanceEl.textContent = `${data.balance} ${data.currency}`;
+      savingsEl.textContent = `${data.savings} ${data.currency}`;
+      expensesEl.textContent = `${data.expenses} ${data.currency}`;
+      currencySelect.value = data.currency;
+
+      historyList.innerHTML = data.history.map(item => `<li>${item}</li>`).join('');
+
+      goalList.innerHTML = data.goals.map((goal, index) => `
+        <div class='goal'>
+          <strong>${goal.name}</strong> — ${goal.saved}/${goal.amount} ${data.currency}
+          <progress value='${goal.saved}' max='${goal.amount}'></progress><br>
+          <button onclick='addToGoal(${index})'>Внести</button>
+        </div>`).join('');
+    }
+
+    function saveData() {
+      localStorage.setItem('ibrahimData', JSON.stringify(data));
+    }
+
+    function addIncome() {
+      const amount = Number(document.getElementById('amount').value);
+      const desc = document.getElementById('description').value || 'Доход';
+      if (!amount) return;
+      data.balance += amount;
+      data.history.unshift(`+${amount} ${data.currency} — ${desc}`);
+      saveData();
+      updateDisplay();
+    }
+
+    function addExpense() {
+      const amount = Number(document.getElementById('amount').value);
+      const desc = document.getElementById('description').value || 'Расход';
+      if (!amount) return;
+      data.balance -= amount;
+      data.expenses += amount;
+      data.history.unshift(`-${amount} ${data.currency} — ${desc}`);
+      saveData();
+      updateDisplay();
+    }
+
+    function addToSavings() {
+      const amount = Number(document.getElementById('amount').value);
+      if (!amount) return;
+      if (data.balance < amount) return alert('Недостаточно средств!');
+      data.balance -= amount;
+      data.savings += amount;
+      data.history.unshift(`💰 В копилку: ${amount} ${data.currency}`);
+      saveData();
+      updateDisplay();
+    }
+
+    function addGoal() {
+      const name = document.getElementById('goalName').value;
+      const amount = Number(document.getElementById('goalAmount').value);
+      if (!name || !amount) return;
+      data.goals.push({ name, amount, saved: 0 });
+      saveData();
+      updateDisplay();
+    }
+
+    function addToGoal(index) {
+      const amount = prompt('Сколько внести на цель?');
+      const value = Number(amount);
+      if (!value) return;
+      if (data.balance < value) return alert('Недостаточно средств!');
+      data.balance -= value;
+      data.goals[index].saved += value;
+      if (data.goals[index].saved >= data.goals[index].amount) {
+        alert(`Цель «${data.goals[index].name}» достигнута! ⚽`);
+      }
+      data.history.unshift(`🏆 ${value} ${data.currency} в цель «${data.goals[index].name}»`);
+      saveData();
+      updateDisplay();
+    }
+
+    currencySelect.addEventListener('change', () => {
+      data.currency = currencySelect.value;
+      saveData();
+      updateDisplay();
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
